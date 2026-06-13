@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fondo Minecraft</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(
+      to bottom,
+      #D95F3B 0%,
+      #E8703A 15%,
+      #F08040 30%,
+      #F59A45 50%,
+      #F9B850 70%,
+      #FBD060 85%,
+      #FDDD6A 100%
+    );
+  }
+
+  .sky {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  /* Nube 3D isométrica */
+  .cloud {
+    position: absolute;
+    transform-style: preserve-3d;
+  }
+
+  /* Cada bloque de nube tiene 3 caras: top, front, right */
+  .block {
+    position: absolute;
+    transform-style: preserve-3d;
+  }
+
+  .face {
+    position: absolute;
+  }
+
+  /* Usamos CSS para simular perspectiva isométrica con skew */
+  .cloud-shape {
+    position: absolute;
+    filter: drop-shadow(2px 4px 8px rgba(180, 80, 20, 0.3));
+  }
+
+  .cloud-shape svg {
+    display: block;
+  }
+
+  #counter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .counter-row {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+
+  .counter-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .counter-value {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 2.6rem;
+    color: #fff;
+    text-shadow:
+      3px 3px 0 #7B3000,
+      -1px -1px 0 #7B3000,
+      1px -1px 0 #7B3000,
+      -1px 1px 0 #7B3000;
+    line-height: 1;
+    min-width: 2ch;
+    display: inline-block;
+  }
+
+  .counter-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.52rem;
+    color: #FFE0B0;
+    text-shadow: 1px 1px 0 #7B3000;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .counter-sep {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 2.6rem;
+    color: #fff;
+    text-shadow: 3px 3px 0 #7B3000;
+    align-self: flex-start;
+    padding-top: 2px;
+    line-height: 1;
+  }
+
+  #couple-name {
+    position: absolute;
+    top: 24px;
+    right: 28px;
+    z-index: 10;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1rem;
+    color: #fff;
+    text-shadow:
+      2px 2px 0 #7B3000,
+      -1px -1px 0 #7B3000,
+      1px -1px 0 #7B3000,
+      -1px 1px 0 #7B3000;
+  }
+
+  @media (max-width: 768px) {
+    #couple-name {
+      font-size: 0.75rem;
+      top: 14px;
+      right: 14px;
+    }
+  }
+
+  /* ===== Panel de canciones ===== */
+  #songs-panel {
+    position: absolute;
+    top: 50%;
+    left: 4%;
+    transform: translateY(-50%) scale(0.9);
+    z-index: 10;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  #songs-panel.revealed {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(-50%) scale(1);
+  }
+
+  #chest-button {
+    position: absolute;
+    top: 50%;
+    left: 4%;
+    transform: translateY(-50%);
+    z-index: 11;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    user-select: none;
+  }
+
+  #chest-button.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) scale(0.7);
+  }
+
+  #chest-button:hover {
+    transform: translateY(-50%) scale(1.08);
+  }
+
+  #chest-button:hover .chest-icon {
+    animation: chest-wiggle 0.5s ease-in-out infinite;
+  }
+
+  @keyframes chest-wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-4deg); }
+    75% { transform: rotate(4deg); }
+  }
+
+  .chest-icon svg {
+    width: 90px;
+    height: 70px;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(3px 5px 0 rgba(123,48,0,0.35));
+    shape-rendering: crispEdges;
+  }
+
+  .chest-label {
+    margin-top: 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.6rem;
+    color: #fff;
+    text-shadow: 2px 2px 0 #7B3000;
+  }
+
+  @media (max-width: 1100px) {
+    #songs-panel, #chest-button {
+      display: none;
+    }
+  }
+
+  .song-card {
+    background: linear-gradient(to bottom, #F2A655 0%, #E8843A 100%);
+    border-radius: 6px;
+    box-shadow:
+      inset 2px 2px 0 rgba(255,255,255,0.35),
+      inset -2px -2px 0 rgba(123,48,0,0.25),
+      0 4px 0 rgba(123,48,0,0.25);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .song-card:hover {
+    transform: translateY(-4px) scale(1.03);
+    background: linear-gradient(to bottom, #FFC56E 0%, #F2904A 100%);
+    box-shadow:
+      inset 2px 2px 0 rgba(255,255,255,0.45),
+      inset -2px -2px 0 rgba(123,48,0,0.25),
+      0 7px 0 rgba(123,48,0,0.25),
+      0 10px 18px rgba(123,48,0,0.3);
+  }
+
+  .song-card iframe, .song-card a {
+    display: block;
+    width: 100%;
+    border-radius: 4px;
+    border: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .song-card a {
+    position: relative;
+    display: block;
+    aspect-ratio: 16/9;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #2b2b2b;
+  }
+
+  .song-card a img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: blur(14px) brightness(0.35);
+    transform: scale(1.15);
+    transition: filter 0.3s ease, transform 0.3s ease;
+  }
+
+  .song-card:hover a img {
+    filter: blur(4px) brightness(0.55);
+  }
+
+  .mystery-mark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.6rem;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+    transition: opacity 0.3s ease;
+    z-index: 1;
+  }
+
+  .song-card:hover .mystery-mark {
+    opacity: 0;
+  }
+
+  .play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .play-overlay::after {
+    content: '';
+    border-style: solid;
+    border-width: 8px 0 8px 14px;
+    border-color: transparent transparent transparent #fff;
+    margin-left: 3px;
+  }
+
+  .song-card:hover .play-overlay {
+    background: rgba(232,112,58,0.85);
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+
+  @media (max-width: 1100px) {
+    #songs-panel {
+      display: none;
+    }
+  }
+
+  #reasons-panel {
+    position: absolute;
+    top: 50%;
+    right: 4%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 320px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 6px;
+  }
+
+  .reason-box {
+    background: linear-gradient(to bottom, #F2A655 0%, #E8843A 100%);
+    border-radius: 6px;
+    box-shadow:
+      inset 2px 2px 0 rgba(255,255,255,0.35),
+      inset -2px -2px 0 rgba(123,48,0,0.25),
+      0 4px 0 rgba(123,48,0,0.25);
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    cursor: default;
+  }
+
+  .reason-box:hover {
+    transform: translateY(-4px) scale(1.03);
+    background: linear-gradient(to bottom, #FFC56E 0%, #F2904A 100%);
+    box-shadow:
+      inset 2px 2px 0 rgba(255,255,255,0.45),
+      inset -2px -2px 0 rgba(123,48,0,0.25),
+      0 7px 0 rgba(123,48,0,0.25),
+      0 10px 18px rgba(123,48,0,0.3);
+  }
+
+  .reason-box:hover .heart svg {
+    animation: heartbeat 0.6s ease-in-out infinite;
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.35); }
+  }
+
+  .reason-box .heart {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .reason-box .heart svg {
+    display: block;
+    width: 16px;
+    height: 14px;
+  }
+
+  .reason-box .text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.68rem;
+    font-weight: bold;
+    line-height: 1.8;
+    color: #fff;
+    text-shadow: 1px 1px 0 rgba(123,48,0,0.45);
+  }
+
+  /* Scrollbar estilizado */
+  #reasons-panel::-webkit-scrollbar {
+    width: 6px;
+  }
+  #reasons-panel::-webkit-scrollbar-thumb {
+    background: rgba(123,48,0,0.4);
+    border-radius: 4px;
+  }
+  #reasons-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Responsive: en pantallas pequeñas se acomoda abajo */
+  @media (max-width: 768px) {
+    #reasons-panel {
+      right: 50%;
+      top: auto;
+      bottom: 2%;
+      transform: translateX(50%);
+      width: 90vw;
+      max-height: 38vh;
+    }
+    #counter {
+      top: 26%;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+
+<div id="couple-name">Willi x Lulu</div>
+
+<div id="chest-button" onclick="document.getElementById('songs-panel').classList.add('revealed'); this.classList.add('hidden');">
+  <div class="chest-icon">
+    <svg viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="3" width="14" height="8" fill="#A0522D"/>
+      <rect x="1" y="3" width="14" height="1" fill="#C97A4A"/>
+      <rect x="1" y="10" width="14" height="1" fill="#6E3A1E"/>
+      <rect x="1" y="3" width="1" height="8" fill="#C97A4A"/>
+      <rect x="14" y="3" width="1" height="8" fill="#6E3A1E"/>
+      <rect x="0" y="0" width="16" height="3" fill="#C97A4A"/>
+      <rect x="0" y="0" width="16" height="1" fill="#E0A06A"/>
+      <rect x="0" y="2" width="16" height="1" fill="#8A5230"/>
+      <rect x="6" y="2" width="4" height="2" fill="#FFD24A"/>
+      <rect x="7" y="5" width="2" height="3" fill="#5A3018"/>
+    </svg>
+  </div>
+</div>
+
+<div id="songs-panel">
+  <div class="song-card">
+    <a href="https://www.youtube.com/watch?v=jIwX3YozFQ4" target="_blank" rel="noopener">
+      <img src="https://img.youtube.com/vi/jIwX3YozFQ4/mqdefault.jpg" alt="Canción 1">
+      <span class="mystery-mark">?</span><span class="play-overlay"></span>
+    </a>
+  </div>
+  <div class="song-card">
+    <a href="https://www.youtube.com/watch?v=Qn8F_u0vBNI" target="_blank" rel="noopener">
+      <img src="https://img.youtube.com/vi/Qn8F_u0vBNI/mqdefault.jpg" alt="Canción 2">
+      <span class="mystery-mark">?</span><span class="play-overlay"></span>
+    </a>
+  </div>
+  <div class="song-card">
+    <a href="https://www.youtube.com/watch?v=Qut38W0s678" target="_blank" rel="noopener">
+      <img src="https://img.youtube.com/vi/Qut38W0s678/mqdefault.jpg" alt="Canción 3">
+      <span class="mystery-mark">?</span><span class="play-overlay"></span>
+    </a>
+  </div>
+</div>
+
+<div id="counter">
+  <div class="counter-row">
+    <div class="counter-block">
+      <span class="counter-value" id="cd-days">00</span>
+      <span class="counter-label">días</span>
+    </div>
+    <span class="counter-sep">:</span>
+    <div class="counter-block">
+      <span class="counter-value" id="cd-hours">00</span>
+      <span class="counter-label">horas</span>
+    </div>
+    <span class="counter-sep">:</span>
+    <div class="counter-block">
+      <span class="counter-value" id="cd-mins">00</span>
+      <span class="counter-label">minutos</span>
+    </div>
+    <span class="counter-sep">:</span>
+    <div class="counter-block">
+      <span class="counter-value" id="cd-secs">00</span>
+      <span class="counter-label">segundos</span>
+    </div>
+  </div>
+</div>
+
+<div id="reasons-panel">
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Tu sonrisa ilumina mi día</span></div>
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Me haces reír como nadie más</span></div>
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Me siento seguro/a contigo</span></div>
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Tu forma de ver el mundo me inspira</span></div>
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Me cuidas en los momentos difíciles</span></div>
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Eres mi lugar favorito</span></div>
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Me aceptas tal como soy</span></div>
+  <div class="reason-box"><span class="heart"><svg viewBox="0 0 7 6" shape-rendering="crispEdges"><g fill="#F2A6A6"><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="3" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/></g></svg></span><span class="text">Contigo el tiempo vuela</span></div>
+</div>
+
+<script>
+// Contador desde 14 de marzo del año actual a las 11:38
+const startDate = new Date(2026, 2, 14, 11, 38, 0); // mes 2 = marzo (0-indexed)
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function updateCounter() {
+  const now = new Date();
+  let diff = Math.floor((now - startDate) / 1000);
+  if (diff < 0) diff = 0;
+
+  const days  = Math.floor(diff / 86400);
+  const hours = Math.floor((diff % 86400) / 3600);
+  const mins  = Math.floor((diff % 3600) / 60);
+  const secs  = diff % 60;
+
+  document.getElementById('cd-days').textContent  = pad(days);
+  document.getElementById('cd-hours').textContent = pad(hours);
+  document.getElementById('cd-mins').textContent  = pad(mins);
+  document.getElementById('cd-secs').textContent  = pad(secs);
+}
+
+updateCounter();
+setInterval(updateCounter, 1000);
+
+const sky = document.getElementById('sky');
+
+// Paleta de colores para las caras de las nubes (cálido crema/beige)
+// top = más claro, front = medio, right = más oscuro
+const CLOUD_COLORS = {
+  top:   '#FFF0C8',
+  front: '#F5D899',
+  right: '#E8C070',
+  topSub:   '#F8E8B8',
+  frontSub: '#ECC878',
+  rightSub: '#D8A848',
+};
+
+// Dibuja una nube isométrica como SVG inline
+// shape: array de {x, y} en coordenadas de grilla (columna, fila)
+// blockSize: tamaño de cada bloque en px
+function makeCloudSVG(shape, blockSize, colors) {
+  // Isométrica: cada bloque ocupa un rombo
+  // top face: paralelogramo
+  // front face: rectángulo inclinado
+  // right face: rectángulo inclinado
+  const bw = blockSize;
+  const bh = blockSize * 0.5; // altura visual del bloque
+  const depth = blockSize * 0.28; // profundidad de las caras laterales
+
+  // Calcular bounding box
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+  shape.forEach(({x, y}) => {
+    // Posición isométrica del bloque
+    const ix = (x - y) * bw / 2;
+    const iy = (x + y) * bh / 2;
+    minX = Math.min(minX, ix - bw/2);
+    minY = Math.min(minY, iy - bh/2 - depth);
+    maxX = Math.max(maxX, ix + bw/2);
+    maxY = Math.max(maxY, iy + bh/2 + depth);
+  });
+
+  const pad = 4;
+  const W = maxX - minX + pad*2;
+  const H = maxY - minY + pad*2;
+  const ox = -minX + pad;
+  const oy = -minY + pad;
+
+  let paths = [];
+
+  // Ordenar bloques: primero los de mayor x+y (más al fondo en isométrica)
+  const sorted = [...shape].sort((a, b) => (a.x + a.y) - (b.x + b.y));
+
+  sorted.forEach(({x, y}) => {
+    const cx = (x - y) * bw / 2 + ox;
+    const cy = (x + y) * bh / 2 + oy;
+
+    // Top face (rombo)
+    const topPts = [
+      [cx,        cy - bh/2 - depth],
+      [cx + bw/2, cy - depth],
+      [cx,        cy + bh/2 - depth],
+      [cx - bw/2, cy - depth],
+    ];
+
+    // Front face (izquierda)
+    const frontPts = [
+      [cx - bw/2, cy - depth],
+      [cx,        cy + bh/2 - depth],
+      [cx,        cy + bh/2],
+      [cx - bw/2, cy],
+    ];
+
+    // Right face (derecha)
+    const rightPts = [
+      [cx,        cy + bh/2 - depth],
+      [cx + bw/2, cy - depth],
+      [cx + bw/2, cy],
+      [cx,        cy + bh/2],
+    ];
+
+    const toPath = pts => 'M' + pts.map(p => p.join(',')).join('L') + 'Z';
+
+    paths.push(`<path d="${toPath(rightPts)}" fill="${colors.right}" stroke="none"/>`);
+    paths.push(`<path d="${toPath(frontPts)}" fill="${colors.front}" stroke="none"/>`);
+    paths.push(`<path d="${toPath(topPts)}" fill="${colors.top}" stroke="none"/>`);
+  });
+
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${paths.join('')}</svg>`;
+}
+
+// Definición de formas de nubes (coordenadas de grilla)
+const cloudShapes = [
+  // Nube grande tipo cruz
+  [ {x:1,y:0},{x:2,y:0},{x:3,y:0},
+    {x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1},{x:4,y:1},
+    {x:1,y:2},{x:2,y:2},{x:3,y:2} ],
+
+  // Nube mediana
+  [ {x:1,y:0},{x:2,y:0},
+    {x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1},
+    {x:1,y:2},{x:2,y:2} ],
+
+  // Nube pequeña
+  [ {x:0,y:0},{x:1,y:0},
+    {x:0,y:1},{x:1,y:1},{x:2,y:1},
+    {x:1,y:2} ],
+
+  // Nube larga y baja
+  [ {x:0,y:0},{x:1,y:0},{x:2,y:0},{x:3,y:0},
+    {x:0,y:1},{x:1,y:1},{x:2,y:1},{x:3,y:1} ],
+
+  // Nube mini
+  [ {x:0,y:0},{x:1,y:0},
+    {x:0,y:1},{x:1,y:1} ],
+];
+
+// Configuración de nubes en pantalla: [shape_index, left%, top%, scale, opacity]
+const cloudDefs = [
+  [0, 3,  5,  1.3, 1.0],
+  [0, 58, 8,  1.1, 1.0],
+  [1, 2,  32, 0.9, 0.9],
+  [2, 42, 42, 0.7, 0.9],
+  [1, 62, 35, 1.0, 0.95],
+  [3, 0,  58, 0.65, 0.75],
+  [3, 60, 55, 0.7, 0.75],
+  [4, 18, 68, 0.5, 0.65],
+  [4, 48, 72, 0.45, 0.6],
+  [2, 70, 75, 0.5, 0.6],
+  [4, 3,  82, 0.4, 0.5],
+  [3, 55, 85, 0.45, 0.5],
+  [4, 75, 90, 0.35, 0.45],
+];
+
+cloudDefs.forEach(([shapeIdx, leftPct, topPct, scale, opacity]) => {
+  const blockSize = 48 * scale;
+  const colors = opacity < 0.7
+    ? { top: '#FDEAD0', front: '#F5CE90', right: '#E8B060', topSub: '#FDEAD0', frontSub: '#F5CE90', rightSub: '#E8B060' }
+    : CLOUD_COLORS;
+
+  const svg = makeCloudSVG(cloudShapes[shapeIdx], blockSize, colors);
+
+  const div = document.createElement('div');
+  div.className = 'cloud-shape';
+  div.style.left = leftPct + '%';
+  div.style.top = topPct + '%';
+  div.style.opacity = opacity;
+  div.innerHTML = svg;
+  sky.appendChild(div);
+});
+</script>
+</body>
+</html>
